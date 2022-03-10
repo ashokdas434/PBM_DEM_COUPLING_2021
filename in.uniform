@@ -1,0 +1,61 @@
+atom_style 	granular
+atom_modify	map array
+boundary	f f f
+ newton		off
+communicate	single vel yes
+region		reg block -0.0001 0.200001 -0.0001 0.1001 -0.0001 0.1001 units box
+create_box	1 reg
+neighbor	0.002 bin
+neigh_modify	delay 0
+fix 		m1 all property/global youngsModulus peratomtype 5.e6
+fix 		m2 all property/global poissonsRatio peratomtype 0.25
+fix 		m3 all property/global coefficientRestitution peratomtypepair 1 0.1
+fix 		m4 all property/global coefficientFriction peratomtypepair 1 0.5
+fix        id all property/global coefficientRollingFriction peratomtypepair 1 0.01
+pair_style gran model hertz tangential history rolling_friction cdt
+pair_coeff	* *
+timestep	0.00001
+fix		gravi all gravity 9.81 vector 0.0 0.0 -1.0
+fix		drum all mesh/surface file meshes/drum1.stl type 1 scale 0.2
+fix 		wall all wall/gran model hertz tangential history rolling_friction cdt mesh n_meshes 1 meshes drum
+fix  pts1 all particletemplate/sphere 10007 atom_type 1 density constant 1000 radius constant 0.0013365
+fix  pts2 all particletemplate/sphere 10009 atom_type 1 density constant 1000 radius constant 0.0016839
+fix  pts3 all particletemplate/sphere 10037 atom_type 1 density constant 1000 radius constant 0.0019276
+fix  pts4 all particletemplate/sphere 10039 atom_type 1 density constant 1000 radius constant 0.0021216
+fix  pts5 all particletemplate/sphere 10061 atom_type 1 density constant 1000 radius constant 0.0022854
+fix  pts6 all particletemplate/sphere 10067 atom_type 1 density constant 1000 radius constant 0.0024286
+fix  pts7 all particletemplate/sphere 10069 atom_type 1 density constant 1000 radius constant 0.0025566
+fix  pts8 all particletemplate/sphere 10079 atom_type 1 density constant 1000 radius constant 0.002673
+fix  pts9 all particletemplate/sphere 10091 atom_type 1 density constant 1000 radius constant 0.00278
+fix  pts10 all particletemplate/sphere 10093 atom_type 1 density constant 1000 radius constant 0.0028794
+fix  pts11 all particletemplate/sphere 10099 atom_type 1 density constant 1000 radius constant 0.0029724
+fix  pts12 all particletemplate/sphere 10103 atom_type 1 density constant 1000 radius constant 0.0030598
+fix  pts13 all particletemplate/sphere 10111 atom_type 1 density constant 1000 radius constant 0.0031426
+fix  pts14 all particletemplate/sphere 10133 atom_type 1 density constant 1000 radius constant 0.0032212
+fix  pts15 all particletemplate/sphere 10139 atom_type 1 density constant 1000 radius constant 0.0032961
+fix  pts16 all particletemplate/sphere 10141 atom_type 1 density constant 1000 radius constant 0.0033678
+fix  pts17 all particletemplate/sphere 10151 atom_type 1 density constant 1000 radius constant 0.0034365
+fix  pts18 all particletemplate/sphere 10159 atom_type 1 density constant 1000 radius constant 0.0035026
+fix  pts19 all particletemplate/sphere 10163 atom_type 1 density constant 1000 radius constant 0.0035663
+fix  pts20 all particletemplate/sphere 10169 atom_type 1 density constant 1000 radius constant 0.0036278
+fix		pdd1 all particledistribution/discrete/numberbased 32452843 20 pts1 0.05 pts2 0.05 pts3 0.05 pts4 0.05 pts5 0.05 pts6 0.05 pts7 0.05 pts8 0.05 pts9 0.05 pts10 0.05 pts11 0.05 pts12 0.05 pts13 0.05 pts14 0.05 pts15 0.05 pts16 0.05 pts17 0.05 pts18 0.05 pts19 0.05 pts20 0.05
+
+region 		BC1 cylinder x 0.05 0.05 0.05 0.0 0.2 units box
+group		nve_group region BC1
+fix	ins nve_group insert/pack seed 67867979 distributiontemplate pdd1 insert_every once overlapcheck yes all_in yes vel constant 0. 0. 0. region BC1 volumefraction_region 0.2
+fix		integr nve_group nve/sphere
+fix				ts all check/timestep/gran 1000 0.1 0.1
+compute 	contactsearch all contact/atom
+thermo_style	custom step atoms ke
+thermo			100
+thermo_modify	lost ignore norm no
+     run			1
+dump		dmp all custom/vtk 1000 post/conveyor.vtk id type type x y z ix iy iz vx vy vz fx fy fz omegax omegay omegaz radius 
+dump   		dumpstress all mesh/gran/VTK 1000 post/mesh.vtk stress wear drum
+run			100000 upto
+fix		movecad all move/mesh mesh drum rotate origin 0. 0.05 0.05 axis 1. 0. 0. period 1.
+undump 		dumpstress
+undump 		dmp
+dump   		dumpstress all mesh/gran/VTK 100 post/mesh.vtk stress wear drum
+dump		dmp all custom/vtk 50 post/conveyor.vtk id type type x y z ix iy iz radius c_contactsearch
+run			200010 upto

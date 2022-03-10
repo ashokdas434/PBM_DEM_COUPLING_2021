@@ -1,0 +1,7 @@
+To run the bidirectional PBM-DEM coupling code, follow the given steps:
+
+1. Copy the compute_contact_atom.cpp and compute_contact_atom.h, and place it in a fresh src of LIGGGHTS-Public.
+2. Compile the src using "make auto" command to create the executable 'lmp_auto'.
+3. Copy the executable 'lmp_auto'  in the simulation working folder.
+4. Run the shell file 'combine_run.sh' by './combine_run.sh' in terminal in the working folder to execute PBM-DEM coupling framework.
+5. The final results get stored in 'PBE_results-*.mat' files. 
